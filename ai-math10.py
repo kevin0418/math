@@ -3,20 +3,48 @@ from google import genai
 from google.genai import types
 import os
 
-# 1. API 키 설정 (Streamlit Secrets나 환경변수 권장, 여기서는 테스트용 입력창)
+# 1. API 키 설정 (Streamlit Secrets / 환경변수 / 사이드바 입력)
 st.sidebar.title("🔑 설정")
-# 1. Gemini Client 초기화 (Google AI Studio API Key 사용)
-api_key = os.getenv("GEMINI_API_KEY")
-# api_key = st.sidebar.text_input("Gemini API Key를 입력하세요", type="password")
+
+
+def normalize_api_key(value):
+    return value.strip() if isinstance(value, str) else ""
+
+
+api_key = ""
+
+# Streamlit Secrets에서 API 키 우선 읽기
+try:
+    api_key = normalize_api_key(st.secrets["api_keys"].get("GEMINI_API_KEY", ""))
+except Exception:
+    api_key = ""
+
+# 환경변수 fallback
+if not api_key:
+    api_key = normalize_api_key(os.getenv("GEMINI_API_KEY", ""))
+
+# API 키가 없으면 사이드바에서 직접 입력받기
+if not api_key:
+    api_key = normalize_api_key(
+        st.sidebar.text_input(
+            "Gemini API Key를 입력하세요",
+            type="password",
+            key="gemini_api_key"
+        )
+    )
 
 # 2. 클라이언트 초기화 함수
 def get_gemini_client(api_key):
     if not api_key:
+        st.warning("왼쪽 사이드바에 Gemini API Key를 입력해주세요.")
         return None
     try:
         return genai.Client(api_key=api_key)
     except Exception as e:
-        st.error(f"클라이언트 초기화 실패: {e}")
+        st.error(
+            "API 키가 올바르지 않습니다. Gemini AI Studio에서 복사한 키를 사용했는지, 앞뒤 공백이 없는지 확인해주세요."
+        )
+        st.caption(f"상세 오류: {e}")
         return None
 
 # 3. 메인 화면 UI
