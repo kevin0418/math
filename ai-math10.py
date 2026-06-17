@@ -103,27 +103,39 @@ if st.button("🚀 수학 문제 생성하기"):
 
                     # 파일 형식 선택 및 저장
                     from datetime import datetime
-                    from reportlab.lib.pagesizes import letter, A4
-                    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-                    from reportlab.lib.units import inch
-                    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
-                    from reportlab.lib.enums import TA_LEFT, TA_CENTER
                     import re
                     
                     st.markdown("### 📁 파일 저장하기")
                     
+                    pdf_available = True
+                    pdf_error = None
+                    try:
+                        from reportlab.lib.pagesizes import letter, A4
+                        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+                        from reportlab.lib.units import inch
+                        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
+                        from reportlab.lib.enums import TA_LEFT, TA_CENTER
+                        from io import BytesIO
+                    except Exception as e:
+                        pdf_available = False
+                        pdf_error = e
+                    
+                    options = ["📄 Markdown (.md)", "📜 텍스트 (.txt)"]
+                    if pdf_available:
+                        options.insert(0, "📊 PDF (권장)")
+                    else:
+                        st.info("PDF 생성에는 추가 라이브러리가 필요해서, 현재는 Markdown/텍스트로만 저장할 수 있습니다.")
+                    
                     col1, col2 = st.columns([2, 1])
                     with col1:
-                        file_format = st.selectbox("파일 형식 선택", 
-                            ["📊 PDF (권장)", "📄 Markdown (.md)", "📜 텍스트 (.txt)"])
+                        file_format = st.selectbox("파일 형식 선택", options)
                     
                     base_fname = f"solution_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
                     
-                    if "PDF" in file_format:
+                    if "PDF" in file_format and pdf_available:
                         ext, mime = ".pdf", "application/pdf"
                         
                         # PDF 생성 함수
-                        from io import BytesIO
                         pdf_buffer = BytesIO()
                         doc = SimpleDocTemplate(pdf_buffer, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch)
                         story = []
